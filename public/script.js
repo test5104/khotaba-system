@@ -1,23 +1,39 @@
+// ننتظر حتى يتم تحميل كل محتويات الصفحة بالكامل
 document.addEventListener('DOMContentLoaded', function() {
-    // --- متغيرات نموذج الإرسال ---
-    const addPrayerBtn = document.getElementById('addPrayerBtn');
-    const prayersContainer = document.getElementById('prayersContainer');
-    const prayerForm = document.getElementById('prayerForm');
-    const alertContainer = document.getElementById('alert-container');
-    const API_URL = ''; 
+    
+    // ===========================================
+    // ||    الحل النهائي لتشغيل التقويم الهجري  ||
+    // ===========================================
+    // هذه الدالة تقوم بتفعيل التقويم لكل حقول التواريخ
+    function initializeHijriPickers() {
+        // ابحث عن كل حقول الإدخال التي تحتوي على هذه الخاصية
+        const datePickerElements = document.querySelectorAll('[data-hijri-date-picker]');
+        
+        // قم بتشغيل التقويم لكل حقل منها
+        datePickerElements.forEach(element => {
+            new HijriDatePicker(element, {
+                // هنا يمكن إضافة إعدادات إضافية في المستقبل
+            });
+        });
+        console.log(`تم العثور على ${datePickerElements.length} حقل تاريخ وتفعيل التقويم لها.`);
+    }
 
-    // --- متغيرات تسجيل دخول الإدارة ---
+    // قم بتشغيل الدالة بعد فترة قصيرة جداً لضمان أن كل شيء قد تم تحميله
+    // هذا يحل مشكلة "السباق التقني"
+    setTimeout(initializeHijriPickers, 200);
+
+
+    // ===========================================
+    // ||    منطق تسجيل دخول الإدارة           ||
+    // ===========================================
     const adminLoginBtn = document.getElementById('adminLoginBtn');
     const passwordModal = document.getElementById('passwordModal');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const submitPasswordBtn = document.getElementById('submitPasswordBtn');
     const passwordInput = document.getElementById('passwordInput');
     const passwordError = document.getElementById('passwordError');
-    const ADMIN_PASSWORD = "admin"; // يمكنك تغيير هذا الرمز السري
+    const ADMIN_PASSWORD = "admin";
 
-    // ===========================================
-    // ||    منطق تسجيل دخول الإدارة           ||
-    // ===========================================
     adminLoginBtn.addEventListener('click', (e) => {
         e.preventDefault();
         passwordModal.style.display = 'flex';
@@ -32,17 +48,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     submitPasswordBtn.addEventListener('click', () => {
         if (passwordInput.value === ADMIN_PASSWORD) {
-            // إذا كان الرمز صحيحاً، انتقل إلى صفحة الإدارة
             window.location.href = '/admin.html';
         } else {
-            // إذا كان الرمز خاطئاً، أظهر رسالة خطأ
             passwordError.style.display = 'block';
             passwordInput.value = '';
             passwordInput.focus();
         }
     });
     
-    // للسماح بالدخول عند الضغط على زر Enter
     passwordInput.addEventListener('keyup', function(event) {
         if (event.key === "Enter") {
             submitPasswordBtn.click();
@@ -53,21 +66,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===========================================
     // ||        منطق نموذج الإرسال            ||
     // ===========================================
+    const addPrayerBtn = document.getElementById('addPrayerBtn');
+    const prayersContainer = document.getElementById('prayersContainer');
+    const prayerForm = document.getElementById('prayerForm');
+    const alertContainer = document.getElementById('alert-container');
+    const API_URL = ''; 
+
     addPrayerBtn.addEventListener('click', () => {
         const prayerEntry = document.createElement('div');
         prayerEntry.className = 'row g-3 prayer-entry mb-3 align-items-center';
+        // نضيف الخاصية هنا أيضاً للحقول الجديدة
         prayerEntry.innerHTML = `
             <div class="col-md-6">
                 <input type="text" class="form-control mosque-and-neighborhood" placeholder="اسم الجامع والحي">
             </div>
             <div class="col-md-5">
-                <input type="text" class="form-control prayer-date" placeholder="تاريخ الصلاة (هجري)">
+                <input type="text" class="form-control prayer-date" placeholder="تاريخ الصلاة (هجري)" data-hijri-date-picker>
             </div>
             <div class="col-md-1">
                 <button type="button" class="btn btn-danger btn-sm remove-btn">x</button>
             </div>
         `;
         prayersContainer.appendChild(prayerEntry);
+        // يجب أن نقوم بتفعيل التقويم مرة أخرى للحقل الجديد الذي تم إضافته
+        initializeHijriPickers();
     });
 
     prayersContainer.addEventListener('click', (e) => {
@@ -78,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     prayerForm.addEventListener('submit', async function(e) {
         e.preventDefault();
+        // (باقي كود الإرسال لم يتغير)
         const preacherName = document.getElementById('preacherName').value;
         const nationalId = document.getElementById('nationalId').value;
         const periodStart = document.getElementById('periodStart').value;
