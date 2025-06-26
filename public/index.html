@@ -1,37 +1,93 @@
-const mongoose = require('mongoose');
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل صلوات الخطباء</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 800px; }
+        .card-header { background-color: #0d6efd; color: white; }
+        .btn-add {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            line-height: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-5">
+        <div class="card shadow-sm">
+            <div class="card-header text-center">
+                <h3>نموذج تسجيل صلوات الخطباء الشهري</h3>
+            </div>
+            <div class="card-body p-4">
+                <form id="prayerForm">
+                    <!-- اختيار الخطيب -->
+                    <div class="mb-3">
+                        <label for="preacherName" class="form-label fw-bold">اسم الخطيب:</label>
+                        <select class="form-select" id="preacherName" required>
+                            <option value="" disabled selected>-- اختر اسم الخطيب --</option>
+                            <option value="عبدالرحمن السديس">عبدالرحمن السديس</option>
+                            <option value="سعود الشريم">سعود الشريم</option>
+                            <option value="صالح الفوزان">صالح الفوزان</option>
+                            <option value="عبدالعزيز آل الشيخ">عبدالعزيز آل الشيخ</option>
+                            <option value="محمد العريفي">محمد العريفي</option>
+                        </select>
+                    </div>
 
-// تعريف شكل بيانات الصلاة الواحدة
-const prayerSchema = new mongoose.Schema({
-  mosque: { 
-    type: String, 
-    required: true 
-  },
-  date: { 
-    type: Date, 
-    required: true 
-  }
-});
+                    <hr>
 
-// تعريف شكل بيانات الطلب الكامل
-const prayerRequestSchema = new mongoose.Schema({
-  preacherName: {
-    type: String,
-    required: true
-  },
-  prayers: [prayerSchema], // مصفوفة من الصلوات
-  eidPrayer: {
-    mosque: String,
-    date: Date
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'approved'], // القيم المسموح بها فقط
-    default: 'pending' // القيمة الافتراضية
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now // تاريخ إنشاء الطلب تلقائياً
-  }
-});
+                    <!-- الصلوات العادية -->
+                    <h5 class="mt-4">الصلوات الدورية للشهر</h5>
+                    <div id="prayersContainer">
+                        <!-- بداية إدخال الصلاة الأولى -->
+                        <div class="row prayer-entry mb-3 align-items-center">
+                            <div class="col-md-6">
+                                <label class="form-label">اسم الجامع:</label>
+                                <input type="text" class="form-control mosque-name" required>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">تاريخ الصلاة:</label>
+                                <input type="date" class="form-control prayer-date" required>
+                            </div>
+                        </div>
+                        <!-- نهاية إدخال الصلاة الأولى -->
+                    </div>
+                    <button type="button" id="addPrayerBtn" class="btn btn-success btn-add d-flex align-items-center justify-content-center">+</button>
+                    
+                    <hr>
 
-module.exports = mongoose.model('PrayerRequest', prayerRequestSchema);
+                    <!-- صلاة العيد -->
+                    <h5 class="mt-4 d-flex align-items-center">
+                        <span class="badge bg-primary me-2 fs-4">+</span>
+                        إضافة صلاة العيد (اختياري)
+                    </h5>
+                    <div class="row mt-3">
+                         <div class="col-md-6 mb-3">
+                            <label for="eidMosque" class="form-label">مسجد صلاة العيد:</label>
+                            <input type="text" class="form-control" id="eidMosque">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="eidDate" class="form-label">تاريخ صلاة العيد:</label>
+                            <input type="date" class="form-control" id="eidDate">
+                        </div>
+                    </div>
+
+                    <!-- زر الإرسال -->
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">إرسال الطلب للإدارة</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id="alert-container" class="mt-3"></div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
