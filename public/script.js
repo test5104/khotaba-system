@@ -1,56 +1,28 @@
 document.addEventListener('DOMContentLoaded', function() {
     
-    // =================================================================
-    // ||             SECTION 1: INITIAL DATA & HELPERS             ||
-    // =================================================================
-
+    // SECTION 1: INITIAL DATA & HELPERS
     const hijriMonths = ["محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
     const preachersData = {
-        "متعب بدر عبدالرحمن القوس": "1036559654",
-             "فهد محيا سهل المهيدلي العتيبي": "1039582760",
-             "سلطان معتق مفرح الروقي": "1059448934",
-             "رشيد صالح سليمان العجمي": "1067855443",
-             "عمر نائف عقاب الكسر العتيبي": "1063777906"
+        "متعب بدر عبدالرحمن القوس": "1111111111",
+        "فهد محيا سهل المهيدلي العتيبي": "2222222222",
+        "سلطان معتق مفرح الروقي": "3333333333",
+        "رشيد صالح سليمان العجمي": "4444444444",
+        "عمر نائف عقاب الكسر العتيبي": "5555555555"
     };
-    
-    // === متغيرات لتثبيت التاريخ ===
-    let lockedMonth = null;
-    let lockedYear = null;
-    let lockDateListener = null; // سيتم تعريف الدالة لاحقاً
+    let lockedPrayerMonth = null, lockedPrayerYear = null, lockPrayerDateListener = null;
 
-    function populateDays(selectElement) {
-        selectElement.innerHTML = '<option value="" selected disabled>يوم</option>';
-        for (let i = 1; i <= 31; i++) {
-            selectElement.add(new Option(i, i));
-        }
+    function populateDays(select) { select.innerHTML = '<option value="" selected disabled>يوم</option>'; for (let i = 1; i <= 31; i++) select.add(new Option(i, i)); }
+    function populateMonths(select) { select.innerHTML = '<option value="" selected disabled>شهر</option>'; hijriMonths.forEach((m, i) => select.add(new Option(m, i + 1))); }
+    function populateYears(select, start = 1446, end = 1460) { select.innerHTML = '<option value="" selected disabled>سنة</option>'; for (let i = start; i <= end; i++) select.add(new Option(`${i}هـ`, i)); }
+    function getDateFromGroup(group) {
+        if (!group) return "";
+        const d = group.querySelector('.day-select').value;
+        const m = group.querySelector('.month-select').value;
+        const y = group.querySelector('.year-select').value;
+        return (d && m && y) ? `${y}/${m}/${d}` : "";
     }
 
-    function populateMonths(selectElement) {
-        selectElement.innerHTML = '<option value="" selected disabled>شهر</option>';
-        hijriMonths.forEach((month, index) => {
-            selectElement.add(new Option(month, index + 1));
-        });
-    }
-
-    function populateYears(selectElement, startYear = 1446, endYear = 1460) {
-        selectElement.innerHTML = '<option value="" selected disabled>سنة</option>';
-        for (let i = startYear; i <= endYear; i++) {
-            selectElement.add(new Option(`${i}هـ`, i));
-        }
-    }
-
-    function getDateFromGroup(groupElement) {
-        if (!groupElement) return "";
-        const day = groupElement.querySelector('.day-select').value;
-        const month = groupElement.querySelector('.month-select').value;
-        const year = groupElement.querySelector('.year-select').value;
-        return (day && month && year) ? `${year}/${month}/${day}` : "";
-    }
-    
-    // =================================================================
-    // ||              SECTION 2: FORM & UI LOGIC                   ||
-    // =================================================================
-
+    // SECTION 2: FORM & UI LOGIC
     const preacherNameSelect = document.getElementById('preacherName');
     const nationalIdInput = document.getElementById('nationalId');
     const monthPeriodSelect = document.getElementById('month-period-select');
@@ -58,88 +30,75 @@ document.addEventListener('DOMContentLoaded', function() {
     const addPrayerBtn = document.getElementById('addPrayerBtn');
     const prayersContainer = document.getElementById('prayersContainer');
     const prayerForm = document.getElementById('prayerForm');
+    const periodStartGroup = document.getElementById('periodStart');
+    const periodEndGroup = document.getElementById('periodEnd');
+    const periodStartMonth = periodStartGroup.querySelector('.month-select');
+    const periodStartYear = periodStartGroup.querySelector('.year-select');
+    const periodEndMonth = periodEndGroup.querySelector('.month-select');
+    const periodEndYear = periodEndGroup.querySelector('.year-select');
 
-    preacherNameSelect.addEventListener('change', function() {
-        nationalIdInput.value = preachersData[this.value] || '';
-    });
+    const lockPeriodListener = () => {
+        if (periodStartMonth.value && periodStartYear.value) {
+            periodEndMonth.value = periodStartMonth.value;
+            periodEndYear.value = periodStartYear.value;
+        }
+    };
+    periodStartMonth.addEventListener('change', lockPeriodListener);
+    periodStartYear.addEventListener('change', lockPeriodListener);
 
+    preacherNameSelect.addEventListener('change', function() { nationalIdInput.value = preachersData[this.value] || ''; });
     populateMonths(monthPeriodSelect);
     populateYears(yearPeriodSelect);
 
-    // دالة لإضافة صف صلاة جديد مع المنطق الجديد لتثبيت التاريخ
     function addNewPrayerRow() {
-        const prayerEntry = document.createElement('div');
-        prayerEntry.className = 'row g-3 prayer-entry mb-3 align-items-center';
-        prayerEntry.innerHTML = `
+        const entry = document.createElement('div');
+        entry.className = 'row g-3 prayer-entry mb-3 align-items-center';
+        entry.innerHTML = `
             <div class="col-12 col-md-5"><input type="text" class="form-control mosque-and-neighborhood" placeholder="اسم الجامع والحي"></div>
             <div class="col-12 col-md-6"><div class="d-flex date-select-group"><select class="form-select day-select"></select><select class="form-select month-select"></select><select class="form-select year-select"></select></div></div>
             <div class="col-12 col-md-1 text-center"><button type="button" class="btn btn-danger btn-sm remove-btn w-100">x</button></div>`;
-        
-        prayersContainer.appendChild(prayerEntry);
-        
-        const daySelect = prayerEntry.querySelector('.day-select');
-        const monthSelect = prayerEntry.querySelector('.month-select');
-        const yearSelect = prayerEntry.querySelector('.year-select');
-
-        populateDays(daySelect);
+        prayersContainer.appendChild(entry);
+        const monthSelect = entry.querySelector('.month-select');
+        const yearSelect = entry.querySelector('.year-select');
+        populateDays(entry.querySelector('.day-select'));
         populateMonths(monthSelect);
         populateYears(yearSelect);
-
-        // إذا كان هناك شهر وسنة مثبتان، قم بتطبيقهما على الصف الجديد
-        if (lockedMonth && lockedYear) {
-            monthSelect.value = lockedMonth;
-            yearSelect.value = lockedYear;
+        if (lockedPrayerMonth && lockedPrayerYear) {
+            monthSelect.value = lockedPrayerMonth;
+            yearSelect.value = lockedPrayerYear;
             monthSelect.disabled = true;
             yearSelect.disabled = true;
         }
     }
     
-    // دالة لربط حدث تثبيت التاريخ بأول صف صلاة
     function attachLockListener() {
-        const firstPrayerRow = prayersContainer.querySelector('.prayer-entry');
-        if (firstPrayerRow) {
-            const firstMonthSelect = firstPrayerRow.querySelector('.month-select');
-            const firstYearSelect = firstPrayerRow.querySelector('.year-select');
-            
-            // تعريف الدالة التي سيتم استدعاؤها عند التغيير
-            lockDateListener = () => {
-                if (firstMonthSelect.value && firstYearSelect.value) {
-                    lockedMonth = firstMonthSelect.value;
-                    lockedYear = firstYearSelect.value;
-                } else {
-                    lockedMonth = null;
-                    lockedYear = null;
-                }
+        const firstRow = prayersContainer.querySelector('.prayer-entry');
+        if (firstRow) {
+            const firstMonth = firstRow.querySelector('.month-select'), firstYear = firstRow.querySelector('.year-select');
+            lockPrayerDateListener = () => {
+                lockedPrayerMonth = (firstMonth.value && firstYear.value) ? firstMonth.value : null;
+                lockedPrayerYear = (firstMonth.value && firstYear.value) ? firstYear.value : null;
             };
-            
-            firstMonthSelect.addEventListener('change', lockDateListener);
-            firstYearSelect.addEventListener('change', lockDateListener);
+            firstMonth.addEventListener('change', lockPrayerDateListener);
+            firstYear.addEventListener('change', lockPrayerDateListener);
         }
     }
 
-    // تفعيل قوائم التاريخ الرئيسية
-    populateDays(document.querySelector('#periodStart .day-select'));
-    populateMonths(document.querySelector('#periodStart .month-select'));
-    populateYears(document.querySelector('#periodStart .year-select'));
-    populateDays(document.querySelector('#periodEnd .day-select'));
-    populateMonths(document.querySelector('#periodEnd .month-select'));
-    populateYears(document.querySelector('#periodEnd .year-select'));
-    
-    addNewPrayerRow(); // إضافة أول صف صلاة
-    attachLockListener(); // ربط حدث التثبيت بأول صف
+    populateDays(periodStartGroup.querySelector('.day-select'));
+    populateMonths(periodStartMonth);
+    populateYears(periodStartYear);
+    populateDays(periodEndGroup.querySelector('.day-select'));
+    populateMonths(periodEndMonth);
+    populateYears(periodEndYear);
+    addNewPrayerRow();
+    attachLockListener();
 
     addPrayerBtn.addEventListener('click', addNewPrayerRow);
-
     prayersContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-btn')) {
-            e.target.closest('.prayer-entry').remove();
-        }
+        if (e.target.classList.contains('remove-btn')) { e.target.closest('.prayer-entry').remove(); }
     });
     
-    // =================================================================
-    // ||          SECTION 3: ADMIN LOGIN & FORM SUBMISSION         ||
-    // =================================================================
-    
+    // SECTION 3: ADMIN LOGIN & FORM SUBMISSION
     const adminLoginBtn = document.getElementById('adminLoginBtn');
     const passwordModal = document.getElementById('passwordModal');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -154,17 +113,13 @@ document.addEventListener('DOMContentLoaded', function() {
             passwordModal.classList.add('active');
             passwordInput.focus();
         });
-
-        closeModalBtn.addEventListener('click', () => {
+        const closeModal = () => {
             passwordModal.classList.remove('active');
-        });
-
-        passwordModal.addEventListener('click', (e) => {
-            if (e.target === passwordModal) {
-                passwordModal.classList.remove('active');
-            }
-        });
-
+            passwordError.style.display = 'none';
+            passwordInput.value = '';
+        }
+        closeModalBtn.addEventListener('click', closeModal);
+        passwordModal.addEventListener('click', (e) => { if (e.target === passwordModal) closeModal(); });
         submitPasswordBtn.addEventListener('click', () => {
             if (passwordInput.value === ADMIN_PASSWORD) {
                 window.location.href = '/admin.html';
@@ -174,45 +129,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if(prayerForm) {
+    if (prayerForm) {
         prayerForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            const monthText = monthPeriodSelect.options[monthPeriodSelect.selectedIndex]?.text || '';
-            const yearText = yearPeriodSelect.options[yearPeriodSelect.selectedIndex]?.text || '';
-            const fullMonthName = (monthText && yearText) ? `${monthText} لعام ${yearText}` : '';
-            
+            const isMonthValid = monthPeriodSelect.value && yearPeriodSelect.value;
+            const isStartValid = getDateFromGroup(periodStartGroup);
+            const isEndValid = periodEndGroup.querySelector('.day-select').value;
+            if (!isMonthValid || !isStartValid || !isEndValid) {
+                return showAlert('الرجاء تعبئة جميع الحقول التي تحتوي على علامة النجمة (*).', 'warning');
+            }
+            const monthText = monthPeriodSelect.options[monthPeriodSelect.selectedIndex]?.text || '', yearText = yearPeriodSelect.options[yearPeriodSelect.selectedIndex]?.text || '';
             const dataToSend = {
                 preacherName: preacherNameSelect.value,
                 nationalId: nationalIdInput.value,
-                monthName: fullMonthName,
-                periodStart: getDateFromGroup(document.getElementById('periodStart')),
-                periodEnd: getDateFromGroup(document.getElementById('periodEnd')),
+                monthName: (monthText && yearText) ? `${monthText} لعام ${yearText}` : '',
+                periodStart: getDateFromGroup(periodStartGroup),
+                periodEnd: getDateFromGroup(periodEndGroup),
                 prayers: Array.from(document.querySelectorAll('.prayer-entry')).map(entry => ({
                     mosqueAndNeighborhood: entry.querySelector('.mosque-and-neighborhood').value,
                     date: getDateFromGroup(entry.querySelector('.date-select-group'))
                 })).filter(p => p.mosqueAndNeighborhood || p.date)
             };
-            
             try {
-                const response = await fetch('/api/requests', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dataToSend)
-                });
-                if (!response.ok) throw new Error('حدث خطأ أثناء إرسال الطلب.');
+                const res = await fetch('/api/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSend) });
+                if (!res.ok) throw new Error('حدث خطأ أثناء إرسال الطلب.');
                 showAlert('تم إرسال الطلب بنجاح!', 'success');
-                
-                // إعادة تعيين كل شيء للحالة الأولية
                 prayerForm.reset();
                 nationalIdInput.value = '';
                 prayersContainer.innerHTML = '';
-                lockedMonth = null;
-                lockedYear = null;
+                lockedPrayerMonth = null, lockedPrayerYear = null;
                 addNewPrayerRow();
                 attachLockListener();
-
-            } catch (error) {
-                showAlert(error.message, 'danger');
+                lockPeriodListener();
+            } catch (err) {
+                showAlert(err.message, 'danger');
             }
         });
     }

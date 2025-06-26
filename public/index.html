@@ -12,8 +12,9 @@
         .card-header { background-color: #2c3e50; color: white; }
         .admin-login-link { position: absolute; top: 1rem; left: 1rem; z-index: 10; }
         .date-select-group .form-select { margin-left: 0.5rem; }
+        .required-field::after { content: ' *'; color: red; }
 
-        /* === التصميم الجديد والاحترافي للنافذة المنبثقة === */
+        /* === التصميم الصحيح للنافذة المنبثقة === */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -25,16 +26,14 @@
             justify-content: center;
             align-items: center;
             z-index: 1050;
-            opacity: 0; /* للتحكم في الظهور التدريجي */
-            visibility: hidden; /* للتحكم في الإخفاء */
+            opacity: 0;
+            visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
-
         .modal-overlay.active {
             opacity: 1;
             visibility: visible;
         }
-
         .modal-content-custom {
             background: white;
             padding: 2rem;
@@ -43,10 +42,9 @@
             max-width: 400px;
             box-shadow: 0 5px 20px rgba(0,0,0,.3);
             text-align: center;
-            transform: translateY(-20px); /* للتحكم في حركة الظهور */
+            transform: translateY(-20px);
             transition: transform 0.3s ease;
         }
-
         .modal-overlay.active .modal-content-custom {
             transform: translateY(0);
         }
@@ -61,7 +59,7 @@
         <div class="card shadow-sm border-0">
             <div class="card-header text-center"><h3>طلب مستحقات خطيب متعاون</h3></div>
             <div class="card-body p-4">
-                <form id="prayerForm">
+                <form id="prayerForm" novalidate>
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-6">
                             <label for="preacherName" class="form-label">اسم الخطيب المتعاون:</label>
@@ -79,28 +77,28 @@
                             <input type="text" class="form-control" id="nationalId" readonly>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">لفترة شهر:</label>
+                            <label class="form-label required-field">لفترة شهر:</label>
                             <div class="d-flex" id="period-month-year">
-                                <select class="form-select" id="month-period-select"></select>
-                                <select class="form-select" id="year-period-select" style="margin-right: 0.5rem;"></select>
+                                <select class="form-select" id="month-period-select" required></select>
+                                <select class="form-select" id="year-period-select" required style="margin-right: 0.5rem;"></select>
                             </div>
                         </div>
                     </div>
                     <div class="row g-3">
                          <div class="col-12 col-md-6">
-                            <label class="form-label">من تاريخ:</label>
+                            <label class="form-label required-field">من تاريخ:</label>
                             <div class="d-flex date-select-group" id="periodStart">
-                                <select class="form-select day-select"></select>
-                                <select class="form-select month-select"></select>
-                                <select class="form-select year-select"></select>
+                                <select class="form-select day-select" required></select>
+                                <select class="form-select month-select" required></select>
+                                <select class="form-select year-select" required></select>
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label">إلى تاريخ:</label>
+                            <label class="form-label required-field">إلى تاريخ:</label>
                              <div class="d-flex date-select-group" id="periodEnd">
-                                <select class="form-select day-select"></select>
-                                <select class="form-select month-select"></select>
-                                <select class="form-select year-select"></select>
+                                <select class="form-select day-select" required></select>
+                                <select class="form-select month-select" disabled></select>
+                                <select class="form-select year-select" disabled></select>
                             </div>
                         </div>
                     </div>
@@ -122,7 +120,7 @@
             <input type="password" id="passwordInput" class="form-control mb-3" placeholder="الرمز السري">
             <div id="passwordError" class="text-danger mb-2" style="display: none;">الرمز غير صحيح!</div>
             <button id="submitPasswordBtn" class="btn btn-primary w-100">دخــــول</button>
-            <button id="closeModalBtn" class="btn btn-link text-muted mt-2">إغلاق</button>
+            <button id="closeModalBtn" class="btn btn-link text-muted mt-2">إلغاء</button>
         </div>
     </div>
     <script src="/script.js"></script>
