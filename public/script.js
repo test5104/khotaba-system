@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const day = groupElement.querySelector('.day-select').value;
         const month = groupElement.querySelector('.month-select').value;
         const year = groupElement.querySelector('.year-select').value;
-        // يرجع التاريخ فقط إذا تم تحديد كل الحقول
         return (day && month && year) ? `${year}/${month}/${day}` : "";
     }
     
@@ -129,18 +128,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitPasswordBtn = document.getElementById('submitPasswordBtn');
     const passwordInput = document.getElementById('passwordInput');
     const passwordError = document.getElementById('passwordError');
-    const ADMIN_PASSWORD = "admin"; // الرمز السري
+    const ADMIN_PASSWORD = "admin";
 
     // منطق نافذة تسجيل الدخول كاملاً
     if (adminLoginBtn && passwordModal) {
         adminLoginBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            passwordModal.style.display = 'flex';
+            passwordModal.classList.add('active');
             passwordInput.focus();
         });
 
         closeModalBtn.addEventListener('click', () => {
-            passwordModal.style.display = 'none';
+            passwordModal.classList.remove('active');
+        });
+        
+        passwordModal.addEventListener('click', (e) => {
+            if (e.target === passwordModal) {
+                passwordModal.classList.remove('active');
+            }
         });
 
         submitPasswordBtn.addEventListener('click', () => {
@@ -166,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const dataToSend = {
                 preacherName: preacherNameSelect.value,
                 nationalId: nationalIdInput.value,
-                monthName: fullMonthName, // إرسال النص المجمع
+                monthName: fullMonthName,
                 periodStart: getDateFromGroup(document.getElementById('periodStart')),
                 periodEnd: getDateFromGroup(document.getElementById('periodEnd')),
                 prayers: Array.from(document.querySelectorAll('.prayer-entry')).map(entry => ({
@@ -185,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!response.ok) throw new Error('حدث خطأ أثناء إرسال الطلب.');
                 showAlert('تم إرسال الطلب بنجاح!', 'success');
                 prayerForm.reset(); // إعادة تعيين النموذج
+                nationalIdInput.value = ''; // مسح الهوية الوطنية يدوياً
                 prayersContainer.innerHTML = ''; // مسح الصلوات القديمة
                 addNewPrayerRow(); // إضافة صف فارغ جديد
             } catch (error) {
