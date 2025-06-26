@@ -5,43 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f4f7f6; }
-        .container-fluid { padding: 2rem; }
-        .table thead { background-color: #343a40; color: white; }
-        .status-pending { color: #ffc107; font-weight: bold; }
-        .status-approved { color: #198754; font-weight: bold; }
-        .table-responsive {
-            max-height: 80vh;
-        }
+        body { background-color: #e9ecef; font-family: 'Tajawal', sans-serif; }
+        .report-card { border: 1px solid #ccc; border-radius: 0.5rem; background: white; margin-bottom: 1.5rem; }
+        .report-header { background-color: #f8f9fa; padding: 0.75rem; border-bottom: 1px solid #ccc; text-align: center; }
+        .report-body { padding: 1rem; }
+        .report-table { width: 100%; border-collapse: collapse; }
+        .report-table th, .report-table td { border: 1px solid #dee2e6; padding: 0.5rem; text-align: center; }
+        .report-table th { background-color: #f2f2f2; }
+        .accordion-button:not(.collapsed) { background-color: #343a40; color: white; }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <h1 class="mb-4 text-center">لوحة تحكم طلبات الخطباء</h1>
-        
-        <div class="table-responsive shadow-sm bg-white rounded">
-            <table class="table table-striped table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>اسم الخطيب</th>
-                        <th>تاريخ الإرسال</th>
-                        <th>الصلوات الدورية</th>
-                        <th>صلاة العيد</th>
-                        <th>الحالة</th>
-                        <th>الإجراء</th>
-                    </tr>
-                </thead>
-                <tbody id="requestsTableBody">
-                    <tr>
-                        <td colspan="6" class="text-center p-5">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">جارِ التحميل...</span>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+    <div class="container-fluid my-4">
+        <h1 class="text-center mb-5 border-bottom pb-3">لوحة تحكم طلبات الخطباء</h1>
+
+        <!-- قسم الطلبات الجديدة -->
+        <h2 class="mb-4">طلبات جديدة قيد المراجعة</h2>
+        <div id="pending-requests-container" class="mb-5">
+            <!-- سيتم إضافة التقارير هنا بواسطة الجافاسكريبت -->
+            <p id="no-pending-msg" class="text-muted">لا توجد طلبات جديدة حالياً.</p>
+        </div>
+
+        <!-- قسم الأرشيف -->
+        <h2 class="mb-4">الأرشيف</h2>
+        <div class="accordion" id="archive-accordion">
+            <!-- سيتم إضافة الخطباء هنا بواسطة الجافاسكريبت -->
+             <p id="no-archive-msg" class="text-muted">الأرشيف فارغ حالياً.</p>
         </div>
     </div>
 

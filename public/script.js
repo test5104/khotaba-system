@@ -1,137 +1,77 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // ===========================================
-    // ||    إعدادات وقوائم التاريخ الهجري        ||
-    // ===========================================
-    const hijriMonths = ["محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
-    
-    // دالة لإنشاء خيارات الأيام (1-30)
-    function populateDays(selectElement) {
-        selectElement.innerHTML = '<option value="" selected disabled>يوم</option>';
-        for (let i = 1; i <= 30; i++) {
-            const option = document.createElement('option');
-            option.value = option.textContent = i;
-            selectElement.appendChild(option);
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const path = require('path');
+
+const PrayerRequest = require('./models/PrayerRequest');
+const app = express();
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Database Connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Successfully connected to MongoDB Atlas.'))
+  .catch(err => console.error('Could not connect to MongoDB Atlas. Error:', err));
+
+// --- API Routes ---
+
+// GET all requests
+app.get('/api/requests', async (req, res) => {
+  try {
+    const requests = await PrayerRequest.find().sort({ createdAt: -1 });
+    res.status(200).json(requests);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching requests' });
+  }
+});
+
+// POST a new request
+app.post('/api/requests', async (req, res) => {
+    try {
+        const newRequest = new PrayerRequest(req.body);
+        await newRequest.save();
+        res.status(201).json({ message: 'Request submitted successfully!', data: newRequest });
+    } catch (error) {
+        res.status(400).json({ message: 'Error submitting request' });
+    }
+});
+
+// PATCH to approve a request
+app.patch('/api/requests/:id/approve', async (req, res) => {
+  try {
+    const request = await PrayerRequest.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true });
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+    res.status(200).json({ message: 'Request approved successfully!', data: request });
+  } catch (error) {
+    res.status(500).json({ message: 'Error approving request' });
+  }
+});
+
+// ====> DELETE a request (الوظيفة الجديدة) <====
+app.delete('/api/requests/:id', async (req, res) => {
+    try {
+        const request = await PrayerRequest.findByIdAndDelete(req.params.id);
+        if (!request) {
+            return res.status(404).json({ message: 'Request not found' });
         }
+        res.status(200).json({ message: 'Request deleted successfully!' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting request' });
     }
+});
 
-    // دالة لإنشاء خيارات الشهور
-    function populateMonths(selectElement) {
-        selectElement.innerHTML = '<option value="" selected disabled>شهر</option>';
-        hijriMonths.forEach((month, index) => {
-            const option = document.createElement('option');
-            option.value = index + 1; // نخزن رقم الشهر
-            option.textContent = month;
-            selectElement.appendChild(option);
-        });
-    }
 
-    // دالة لإنشاء خيارات السنوات (من العام الحالي إلى 1460)
-    function populateYears(selectElement) {
-        selectElement.innerHTML = '<option value="" selected disabled>سنة</option>';
-        const currentHijriYear = 1446; // يمكنك تحديث هذا سنوياً أو حسابة
-        for (let i = currentHijriYear; i <= 1460; i++) {
-            const option = document.createElement('option');
-            option.value = option.textContent = i;
-            selectElement.appendChild(option);
-        }
-    }
+// Catch-all Route for single page app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-    // دالة لجمع التاريخ من 3 قوائم
-    function getDateFromGroup(groupElement) {
-        const day = groupElement.querySelector('.day-select').value;
-        const month = groupElement.querySelector('.month-select').value;
-        const year = groupElement.querySelector('.year-select').value;
-        if (day && month && year) {
-            return `${year}/${month}/${day}`;
-        }
-        return ""; // إرجاع نص فارغ إذا لم يتم تحديد التاريخ كاملاً
-    }
-
-    // ===========================================
-    // ||           منطق النموذج               ||
-    // ===========================================
-    const addPrayerBtn = document.getElementById('addPrayerBtn');
-    const prayersContainer = document.getElementById('prayersContainer');
-    const prayerForm = document.getElementById('prayerForm');
-
-    // دالة لإضافة صف صلاة جديد
-    function addNewPrayerRow() {
-        const prayerEntry = document.createElement('div');
-        prayerEntry.className = 'row g-3 prayer-entry mb-3 align-items-center';
-        prayerEntry.innerHTML = `
-            <div class="col-md-5">
-                <input type="text" class="form-control mosque-and-neighborhood" placeholder="اسم الجامع والحي">
-            </div>
-            <div class="col-md-6 d-flex date-select-group">
-                <select class="form-select day-select"></select>
-                <select class="form-select month-select"></select>
-                <select class="form-select year-select"></select>
-            </div>
-            <div class="col-md-1">
-                <button type="button" class="btn btn-danger btn-sm remove-btn">x</button>
-            </div>
-        `;
-        prayersContainer.appendChild(prayerEntry);
-        // تفعيل قوائم التاريخ للصف الجديد
-        populateDays(prayerEntry.querySelector('.day-select'));
-        populateMonths(prayerEntry.querySelector('.month-select'));
-        populateYears(prayerEntry.querySelector('.year-select'));
-    }
-
-    // تفعيل قوائم التاريخ الرئيسية
-    populateDays(document.querySelector('#periodStart .day-select'));
-    populateMonths(document.querySelector('#periodStart .month-select'));
-    populateYears(document.querySelector('#periodStart .year-select'));
-    populateDays(document.querySelector('#periodEnd .day-select'));
-    populateMonths(document.querySelector('#periodEnd .month-select'));
-    populateYears(document.querySelector('#periodEnd .year-select'));
-    
-    // إضافة صف صلاة أول عند تحميل الصفحة
-    addNewPrayerRow();
-
-    addPrayerBtn.addEventListener('click', addNewPrayerRow);
-    
-    // (الكود المتبقي لمنطق الدخول والإرسال كما هو بدون تغيير جوهري)
-    const adminLoginBtn = document.getElementById('adminLoginBtn');
-    // ... باقي الكود من الرسائل السابقة ...
-
-    prayerForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const dataToSend = {
-            preacherName: document.getElementById('preacherName').value,
-            nationalId: document.getElementById('nationalId').value,
-            periodStart: getDateFromGroup(document.getElementById('periodStart')),
-            periodEnd: getDateFromGroup(document.getElementById('periodEnd')),
-            prayers: Array.from(document.querySelectorAll('.prayer-entry')).map(entry => ({
-                mosqueAndNeighborhood: entry.querySelector('.mosque-and-neighborhood').value,
-                date: getDateFromGroup(entry)
-            })).filter(p => p.mosqueAndNeighborhood || p.date) // فقط الصلوات التي بها بيانات
-        };
-        
-        // ... باقي كود الإرسال ...
-        const alertContainer = document.getElementById('alert-container');
-        try {
-            const response = await fetch('/api/requests', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dataToSend)
-            });
-            if (!response.ok) throw new Error('حدث خطأ أثناء إرسال الطلب.');
-            
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = `<div class="alert alert-success alert-dismissible" role="alert">تم إرسال الطلب بنجاح!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
-            alertContainer.innerHTML = '';
-            alertContainer.append(wrapper);
-            prayerForm.reset();
-            prayersContainer.innerHTML = '';
-            addNewPrayerRow(); // إعادة إضافة صف فارغ
-
-        } catch (error) {
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = `<div class="alert alert-danger alert-dismissible" role="alert">${error.message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
-            alertContainer.innerHTML = '';
-            alertContainer.append(wrapper);
-        }
-    });
+// Start Server
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}.`);
 });
