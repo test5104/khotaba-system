@@ -2,35 +2,43 @@ const mongoose = require('mongoose');
 
 // تعريف شكل بيانات الصلاة الواحدة
 const prayerSchema = new mongoose.Schema({
-  mosque: { 
-    type: String, 
-    required: true 
+  // تم تغيير الاسم ليكون أوضح
+  mosqueAndNeighborhood: { 
+    type: String 
   },
+  // سيتم تخزين التاريخ كنص لاستيعاب التنسيق الهجري
   date: { 
-    type: Date, 
-    required: true 
+    type: String
   }
 });
 
-// تعريف شكل بيانات الطلب الكامل
+// تعريف شكل بيانات الطلب الكامل مع الحقول الجديدة
 const prayerRequestSchema = new mongoose.Schema({
   preacherName: {
-    type: String,
-    required: true
+    type: String
   },
-  prayers: [prayerSchema], // مصفوفة من الصلوات
+  nationalId: { // حقل الهوية الوطنية الجديد
+    type: String
+  },
+  periodStart: { // حقل بداية الفترة الجديد
+    type: String
+  },
+  periodEnd: { // حقل نهاية الفترة الجديد
+    type: String
+  },
+  prayers: [prayerSchema],
   eidPrayer: {
-    mosque: String,
-    date: Date
+    mosqueAndNeighborhood: String,
+    date: String
   },
   status: {
     type: String,
-    enum: ['pending', 'approved'], // القيم المسموح بها فقط
-    default: 'pending' // القيمة الافتراضية
+    enum: ['pending', 'approved'],
+    default: 'pending'
   },
   createdAt: {
     type: Date,
-    default: Date.now // تاريخ إنشاء الطلب تلقائياً
+    default: Date.now
   }
 });
 
