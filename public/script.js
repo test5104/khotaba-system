@@ -1,187 +1,132 @@
-// This file should only contain code that runs in the browser.
-// No 'require' statements are allowed here.
-
 document.addEventListener('DOMContentLoaded', function() {
-    const pendingContainer = document.getElementById('pending-requests-container');
-    const archiveAccordion = document.getElementById('archive-accordion');
-    const noPendingMsg = document.getElementById('no-pending-msg');
-    const noArchiveMsg = document.getElementById('no-archive-msg');
+    const hijriMonths = ["محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
     
-    // متغيرات نوافذ العرض
-    const reportModal = document.getElementById('report-modal');
-    const reportModalContent = document.getElementById('report-modal-content');
-    const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    function populateDays(selectElement) {
+        selectElement.innerHTML = '<option value="" selected disabled>يوم</option>';
+        for (let i = 1; i <= 30; i++) { selectElement.add(new Option(i, i)); }
+    }
 
-    let allRequests = []; // لتخزين كل الطلبات محلياً
-    let deleteTargetId = null; // لتخزين ID الطلب المراد حذفه
+    function populateMonths(selectElement) {
+        selectElement.innerHTML = '<option value="" selected disabled>شهر</option>';
+        hijriMonths.forEach((month, index) => { selectElement.add(new Option(month, index + 1)); });
+    }
 
-    // دالة رئيسية لجلب وعرض كل شيء
-    async function fetchAndRenderAll() {
-        try {
-            const response = await fetch('/api/requests');
-            if (!response.ok) throw new Error('فشل في جلب البيانات');
-            allRequests = await response.json();
+    function populateYears(selectElement) {
+        selectElement.innerHTML = '<option value="" selected disabled>سنة</option>';
+        const currentHijriYear = 1446;
+        for (let i = currentHijriYear; i <= 1460; i++) { selectElement.add(new Option(i, i)); }
+    }
 
-            const pendingRequests = allRequests.filter(r => r.status === 'pending');
-            const approvedRequests = allRequests.filter(r => r.status === 'approved');
+    function getDateFromGroup(groupElement) {
+        if (!groupElement) return "";
+        const day = groupElement.querySelector('.day-select').value;
+        const month = groupElement.querySelector('.month-select').value;
+        const year = groupElement.querySelector('.year-select').value;
+        return (day && month && year) ? `${year}/${month}/${day}` : "";
+    }
+    
+    const addPrayerBtn = document.getElementById('addPrayerBtn');
+    const prayersContainer = document.getElementById('prayersContainer');
+    const prayerForm = document.getElementById('prayerForm');
 
-            renderPendingRequests(pendingRequests);
-            renderArchive(approvedRequests);
-        } catch (error) {
-            pendingContainer.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+    function addNewPrayerRow() {
+        const prayerEntry = document.createElement('div');
+        prayerEntry.className = 'row g-3 prayer-entry mb-3 align-items-center';
+        prayerEntry.innerHTML = `
+            <div class="col-md-5"><input type="text" class="form-control mosque-and-neighborhood" placeholder="اسم الجامع والحي"></div>
+            <div class="col-md-6 d-flex date-select-group"><select class="form-select day-select"></select><select class="form-select month-select"></select><select class="form-select year-select"></select></div>
+            <div class="col-md-1"><button type="button" class="btn btn-danger btn-sm remove-btn">x</button></div>`;
+        prayersContainer.appendChild(prayerEntry);
+        populateDays(prayerEntry.querySelector('.day-select'));
+        populateMonths(prayerEntry.querySelector('.month-select'));
+        populateYears(prayerEntry.querySelector('.year-select'));
+    }
+
+    populateDays(document.querySelector('#periodStart .day-select'));
+    populateMonths(document.querySelector('#periodStart .month-select'));
+    populateYears(document.querySelector('#periodStart .year-select'));
+    populateDays(document.querySelector('#periodEnd .day-select'));
+    populateMonths(document.querySelector('#periodEnd .month-select'));
+    populateYears(document.querySelector('#periodEnd .year-select'));
+    addNewPrayerRow();
+
+    addPrayerBtn.addEventListener('click', addNewPrayerRow);
+
+    prayersContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-btn')) {
+            e.target.closest('.prayer-entry').remove();
         }
-    }
+    });
+    
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+    const passwordModal = document.getElementById('passwordModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const submitPasswordBtn = document.getElementById('submitPasswordBtn');
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordError = document.getElementById('passwordError');
+    const ADMIN_PASSWORD = "admin";
 
-    // دالة لرسم الطلبات المعلقة
-    function renderPendingRequests(pending) {
-        pendingContainer.innerHTML = '';
-        if (pending.length === 0) {
-            pendingContainer.appendChild(noPendingMsg);
-            noPendingMsg.style.display = 'block';
-        } else {
-            noPendingMsg.style.display = 'none';
-            pending.forEach(req => pendingContainer.appendChild(createReportCard(req, true)));
-        }
-    }
-
-    // دالة لرسم الأرشيف
-    function renderArchive(approved) {
-        archiveAccordion.innerHTML = '';
-        if (approved.length === 0) {
-            archiveAccordion.appendChild(noArchiveMsg);
-            noArchiveMsg.style.display = 'block';
-        } else {
-            noArchiveMsg.style.display = 'none';
-            const groupedByPreacher = approved.reduce((acc, req) => {
-                const key = req.preacherName || 'غير معروف';
-                if (!acc[key]) acc[key] = [];
-                acc[key].push(req);
-                return acc;
-            }, {});
-
-            Object.keys(groupedByPreacher).forEach((preacherName, index) => {
-                const accordionItem = createAccordionItem(preacherName, groupedByPreacher[preacherName], index);
-                archiveAccordion.appendChild(accordionItem);
-            });
-        }
-    }
-
-    // دالة لإنشاء كرت تقرير (تستخدم للطلبات المعلقة وللعرض في النافذة)
-    function createReportCard(req, isPending = false) {
-        const card = document.createElement('div');
-        card.className = isPending ? 'report-card shadow-sm' : '';
-        
-        let prayersHtml = req.prayers.map((prayer, index) => `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${prayer.date || 'غير محدد'}</td>
-                <td>${prayer.mosqueAndNeighborhood || 'غير محدد'}</td>
-            </tr>
-        `).join('');
-
-        card.innerHTML = `
-            <div class="report-header">
-                <h5>طلب مستحقات خطيب متعاون</h5>
-                <h6>لفترة شهر: ${req.monthName || 'غير محدد'}</h6>
-            </div>
-            <div class="report-body">
-                <table class="report-table mb-3">
-                    <tr><th>الاسم</th><td colspan="2">${req.preacherName || 'غير محدد'}</td><th>من</th><td>${req.periodStart || 'غير محدد'}</td></tr>
-                    <tr><th>الهوية الوطنية</th><td colspan="2">${req.nationalId || 'غير محدد'}</td><th>إلى</th><td>${req.periodEnd || 'غير محدد'}</td></tr>
-                </table>
-                <table class="report-table">
-                    <thead><tr><th style="width: 10%;">م</th><th style="width: 30%;">التاريخ</th><th>اسم الجامع والحي</th></tr></thead>
-                    <tbody>${prayersHtml || '<tr><td colspan="3">لا توجد صلوات مسجلة</td></tr>'}</tbody>
-                </table>
-            </div>
-            ${isPending ? `<div class="card-footer bg-transparent border-0 text-center p-3"><button class="btn btn-success approve-btn" data-id="${req._id}">اعتماد وأرشفة الطلب</button></div>` : ''}
-        `;
-        return card;
-    }
-
-    // دالة لإنشاء عنصر في الأرشيف
-    function createAccordionItem(preacherName, requests, index) {
-        const item = document.createElement('div');
-        item.className = 'accordion-item';
-        const id = `preacher-${index}`;
-        
-        let reportsHtml = '<ul class="list-group list-group-flush">';
-        requests.forEach(req => {
-            reportsHtml += `
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <a href="#" class="archive-item-link" data-id="${req._id}">تقرير شهر: ${req.monthName || new Date(req.createdAt).toLocaleDateString('ar-SA', {month: 'long', year: 'numeric'})}</a>
-                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${req._id}">حذف</button>
-                </li>
-            `;
+    if(adminLoginBtn) {
+        adminLoginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            passwordModal.style.display = 'flex';
+            passwordInput.focus();
         });
-        reportsHtml += '</ul>';
-
-        item.innerHTML = `
-            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${id}">${preacherName} (${requests.length} تقارير)</button></h2>
-            <div id="collapse-${id}" class="accordion-collapse collapse" data-bs-parent="#archive-accordion"><div class="accordion-body">${reportsHtml}</div></div>
-        `;
-        return item;
     }
 
-    // === التعامل مع كل الأحداث ===
-    document.body.addEventListener('click', async (e) => {
-        e.preventDefault(); // منع السلوك الافتراضي للروابط
+    if(closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            passwordModal.style.display = 'none';
+        });
+    }
 
-        // 1. زر الموافقة والأرشفة
-        if (e.target.classList.contains('approve-btn')) {
-            const btn = e.target;
-            btn.disabled = true;
-            btn.textContent = 'جاري الأرشفة...';
-            await fetch(`/api/requests/${btn.dataset.id}/approve`, { method: 'PATCH' });
-            fetchAndRenderAll();
-        }
-
-        // 2. زر الحذف (يفتح نافذة التأكيد)
-        if (e.target.classList.contains('delete-btn')) {
-            deleteTargetId = e.target.dataset.id;
-            deleteConfirmModal.style.display = 'flex';
-        }
-
-        // 3. رابط عرض التقرير من الأرشيف
-        if (e.target.classList.contains('archive-item-link')) {
-            const report = allRequests.find(r => r._id === e.target.dataset.id);
-            if (report) {
-                reportModalContent.innerHTML = '';
-                reportModalContent.appendChild(createReportCard(report, false));
-                reportModal.style.display = 'flex';
+    if(submitPasswordBtn) {
+        submitPasswordBtn.addEventListener('click', () => {
+            if (passwordInput.value === ADMIN_PASSWORD) {
+                window.location.href = '/admin.html';
+            } else {
+                passwordError.style.display = 'block';
             }
-        }
-    });
+        });
+    }
 
-    // إغلاق نوافذ العرض
-    reportModal.addEventListener('click', (e) => {
-        if (e.target === reportModal) reportModal.style.display = 'none';
-    });
-    cancelDeleteBtn.addEventListener('click', () => {
-        deleteConfirmModal.style.display = 'none';
-        deleteTargetId = null;
-    });
+    if(prayerForm) {
+        prayerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const dataToSend = {
+                preacherName: document.getElementById('preacherName').value,
+                nationalId: document.getElementById('nationalId').value,
+                monthName: document.getElementById('monthName').value,
+                periodStart: getDateFromGroup(document.getElementById('periodStart')),
+                periodEnd: getDateFromGroup(document.getElementById('periodEnd')),
+                prayers: Array.from(document.querySelectorAll('.prayer-entry')).map(entry => ({
+                    mosqueAndNeighborhood: entry.querySelector('.mosque-and-neighborhood').value,
+                    date: getDateFromGroup(entry)
+                })).filter(p => p.mosqueAndNeighborhood || p.date)
+            };
+            
+            try {
+                const response = await fetch('/api/requests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSend)
+                });
+                if (!response.ok) throw new Error('حدث خطأ أثناء إرسال الطلب.');
+                showAlert('تم إرسال الطلب بنجاح!', 'success');
+                prayerForm.reset();
+                prayersContainer.innerHTML = '';
+                addNewPrayerRow();
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            }
+        });
+    }
 
-    // تأكيد الحذف
-    confirmDeleteBtn.addEventListener('click', async () => {
-        if (!deleteTargetId) return;
-        const btn = confirmDeleteBtn;
-        btn.disabled = true;
-        btn.textContent = 'جاري الحذف...';
-        await fetch(`/api/requests/${deleteTargetId}`, { method: 'DELETE' });
-        deleteConfirmModal.style.display = 'none';
-        deleteTargetId = null;
-        btn.disabled = false;
-        btn.textContent = 'نعم، قم بالحذف';
-        fetchAndRenderAll();
-    });
-
-    // استيراد مكتبة Bootstrap JS
-    const bootstrapScript = document.createElement('script');
-    bootstrapScript.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
-    document.body.appendChild(bootstrapScript);
-    
-    fetchAndRenderAll();
+    function showAlert(message, type) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `<div class="alert alert-${type} alert-dismissible" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+        const alertContainer = document.getElementById('alert-container');
+        alertContainer.innerHTML = '';
+        alertContainer.append(wrapper);
+    }
 });

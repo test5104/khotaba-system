@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
+const path =require('path');
 
 const PrayerRequest = require('./models/PrayerRequest');
 const app = express();
@@ -19,7 +19,6 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // --- API Routes ---
 
-// GET all requests
 app.get('/api/requests', async (req, res) => {
   try {
     const requests = await PrayerRequest.find().sort({ createdAt: -1 });
@@ -29,7 +28,6 @@ app.get('/api/requests', async (req, res) => {
   }
 });
 
-// POST a new request
 app.post('/api/requests', async (req, res) => {
     try {
         const newRequest = new PrayerRequest(req.body);
@@ -40,7 +38,6 @@ app.post('/api/requests', async (req, res) => {
     }
 });
 
-// PATCH to approve a request
 app.patch('/api/requests/:id/approve', async (req, res) => {
   try {
     const request = await PrayerRequest.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true });
@@ -63,7 +60,6 @@ app.delete('/api/requests/:id', async (req, res) => {
         res.status(500).json({ message: 'Error deleting request' });
     }
 });
-
 
 // Catch-all Route for any other request
 app.get('*', (req, res) => {
