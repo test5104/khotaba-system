@@ -2,28 +2,30 @@ const mongoose = require('mongoose');
 
 // تعريف شكل بيانات الصلاة الواحدة
 const prayerSchema = new mongoose.Schema({
-  // تم تغيير الاسم ليكون أوضح
   mosqueAndNeighborhood: { 
     type: String 
   },
-  // سيتم تخزين التاريخ كنص لاستيعاب التنسيق الهجري
   date: { 
     type: String
   }
 });
 
-// تعريف شكل بيانات الطلب الكامل مع الحقول الجديدة
+// تعريف شكل بيانات الطلب الكامل مع إضافة حقل الشهر
 const prayerRequestSchema = new mongoose.Schema({
   preacherName: {
     type: String
   },
-  nationalId: { // حقل الهوية الوطنية الجديد
+  nationalId: {
     type: String
   },
-  periodStart: { // حقل بداية الفترة الجديد
+  // ====> هذا هو الحقل المهم الذي أضفناه <====
+  monthName: { 
     type: String
   },
-  periodEnd: { // حقل نهاية الفترة الجديد
+  periodStart: {
+    type: String
+  },
+  periodEnd: {
     type: String
   },
   prayers: [prayerSchema],
