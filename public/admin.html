@@ -15,24 +15,52 @@
         .report-table th, .report-table td { border: 1px solid #dee2e6; padding: 0.5rem; text-align: center; }
         .report-table th { background-color: #f2f2f2; }
         .accordion-button:not(.collapsed) { background-color: #343a40; color: white; }
+        .archive-item-link { cursor: pointer; color: #0d6efd; text-decoration: none; }
+        .archive-item-link:hover { text-decoration: underline; }
+        /* === تصميم نوافذ العرض === */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); display: none; /* مخفي افتراضياً */
+            justify-content: center; align-items: center; z-index: 1050; padding: 1rem;
+        }
+        .modal-content-custom {
+            background: white; padding: 1rem; border-radius: 0.5rem;
+            width: 100%; max-width: 800px; box-shadow: 0 5px 15px rgba(0,0,0,.5);
+            max-height: 90vh; overflow-y: auto;
+        }
     </style>
 </head>
 <body>
     <div class="container-fluid my-4">
         <h1 class="text-center mb-5 border-bottom pb-3">لوحة تحكم طلبات الخطباء</h1>
-
         <!-- قسم الطلبات الجديدة -->
         <h2 class="mb-4">طلبات جديدة قيد المراجعة</h2>
         <div id="pending-requests-container" class="mb-5">
-            <!-- سيتم إضافة التقارير هنا بواسطة الجافاسكريبت -->
             <p id="no-pending-msg" class="text-muted">لا توجد طلبات جديدة حالياً.</p>
         </div>
-
         <!-- قسم الأرشيف -->
         <h2 class="mb-4">الأرشيف</h2>
         <div class="accordion" id="archive-accordion">
-            <!-- سيتم إضافة الخطباء هنا بواسطة الجافاسكريبت -->
              <p id="no-archive-msg" class="text-muted">الأرشيف فارغ حالياً.</p>
+        </div>
+    </div>
+
+    <!-- نافذة عرض التقرير المؤرشف (مخفية) -->
+    <div id="report-modal" class="modal-overlay">
+        <div id="report-modal-content" class="modal-content-custom">
+            <!-- سيتم ملء محتوى التقرير هنا -->
+        </div>
+    </div>
+
+    <!-- نافذة تأكيد الحذف (مخفية) -->
+    <div id="delete-confirm-modal" class="modal-overlay">
+        <div class="modal-content-custom" style="max-width: 400px; text-align: center;">
+            <h4 class="mb-3">تأكيد الحذف</h4>
+            <p>هل أنت متأكد من حذف هذا التقرير نهائياً؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            <div class="d-flex justify-content-center mt-4">
+                <button id="confirm-delete-btn" class="btn btn-danger mx-2">نعم، قم بالحذف</button>
+                <button id="cancel-delete-btn" class="btn btn-secondary mx-2">إلغاء</button>
+            </div>
         </div>
     </div>
 
