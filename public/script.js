@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ||             SECTION 1: INITIAL DATA & HELPERS             ||
     // =================================================================
 
-    // بيانات ثابتة للمساعدة في ملء القوائم
     const hijriMonths = ["محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
     const preachersData = {
         "متعب بدر عبدالرحمن القوس": "1111111111",
@@ -13,8 +12,12 @@ document.addEventListener('DOMContentLoaded', function() {
         "رشيد صالح سليمان العجمي": "4444444444",
         "عمر نائف عقاب الكسر العتيبي": "5555555555"
     };
+    
+    // === متغيرات لتثبيت التاريخ ===
+    let lockedMonth = null;
+    let lockedYear = null;
+    let lockDateListener = null; // سيتم تعريف الدالة لاحقاً
 
-    // دالة لمسح وملء قائمة الأيام (1-31)
     function populateDays(selectElement) {
         selectElement.innerHTML = '<option value="" selected disabled>يوم</option>';
         for (let i = 1; i <= 31; i++) {
@@ -22,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // دالة لمسح وملء قائمة الشهور الهجرية
     function populateMonths(selectElement) {
         selectElement.innerHTML = '<option value="" selected disabled>شهر</option>';
         hijriMonths.forEach((month, index) => {
@@ -30,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // دالة لمسح وملء قائمة السنوات (من 1446 إلى 1460)
     function populateYears(selectElement, startYear = 1446, endYear = 1460) {
         selectElement.innerHTML = '<option value="" selected disabled>سنة</option>';
         for (let i = startYear; i <= endYear; i++) {
@@ -38,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // دالة لجمع التاريخ من 3 قوائم منسدلة
     function getDateFromGroup(groupElement) {
         if (!groupElement) return "";
         const day = groupElement.querySelector('.day-select').value;
@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ||              SECTION 2: FORM & UI LOGIC                   ||
     // =================================================================
 
-    // جلب كل عناصر الصفحة التي سنتعامل معها
     const preacherNameSelect = document.getElementById('preacherName');
     const nationalIdInput = document.getElementById('nationalId');
     const monthPeriodSelect = document.getElementById('month-period-select');
@@ -60,43 +59,65 @@ document.addEventListener('DOMContentLoaded', function() {
     const prayersContainer = document.getElementById('prayersContainer');
     const prayerForm = document.getElementById('prayerForm');
 
-    // تفعيل ربط اسم الخطيب بالهوية
     preacherNameSelect.addEventListener('change', function() {
-        const selectedPreacher = this.value;
-        nationalIdInput.value = preachersData[selectedPreacher] || '';
+        nationalIdInput.value = preachersData[this.value] || '';
     });
 
-    // ملء قوائم "لفترة شهر" الرئيسية
     populateMonths(monthPeriodSelect);
     populateYears(yearPeriodSelect);
 
-    // دالة لإضافة صف صلاة جديد
+    // دالة لإضافة صف صلاة جديد مع المنطق الجديد لتثبيت التاريخ
     function addNewPrayerRow() {
         const prayerEntry = document.createElement('div');
         prayerEntry.className = 'row g-3 prayer-entry mb-3 align-items-center';
         prayerEntry.innerHTML = `
-            <div class="col-12 col-md-5">
-                <input type="text" class="form-control mosque-and-neighborhood" placeholder="اسم الجامع والحي">
-            </div>
-            <div class="col-12 col-md-6">
-                 <div class="d-flex date-select-group">
-                    <select class="form-select day-select"></select>
-                    <select class="form-select month-select"></select>
-                    <select class="form-select year-select"></select>
-                </div>
-            </div>
-            <div class="col-12 col-md-1 text-center">
-                <button type="button" class="btn btn-danger btn-sm remove-btn w-100">x</button>
-            </div>
-        `;
+            <div class="col-12 col-md-5"><input type="text" class="form-control mosque-and-neighborhood" placeholder="اسم الجامع والحي"></div>
+            <div class="col-12 col-md-6"><div class="d-flex date-select-group"><select class="form-select day-select"></select><select class="form-select month-select"></select><select class="form-select year-select"></select></div></div>
+            <div class="col-12 col-md-1 text-center"><button type="button" class="btn btn-danger btn-sm remove-btn w-100">x</button></div>`;
+        
         prayersContainer.appendChild(prayerEntry);
-        // تفعيل قوائم التاريخ للصف الجديد
-        populateDays(prayerEntry.querySelector('.day-select'));
-        populateMonths(prayerEntry.querySelector('.month-select'));
-        populateYears(prayerEntry.querySelector('.year-select'));
+        
+        const daySelect = prayerEntry.querySelector('.day-select');
+        const monthSelect = prayerEntry.querySelector('.month-select');
+        const yearSelect = prayerEntry.querySelector('.year-select');
+
+        populateDays(daySelect);
+        populateMonths(monthSelect);
+        populateYears(yearSelect);
+
+        // إذا كان هناك شهر وسنة مثبتان، قم بتطبيقهما على الصف الجديد
+        if (lockedMonth && lockedYear) {
+            monthSelect.value = lockedMonth;
+            yearSelect.value = lockedYear;
+            monthSelect.disabled = true;
+            yearSelect.disabled = true;
+        }
+    }
+    
+    // دالة لربط حدث تثبيت التاريخ بأول صف صلاة
+    function attachLockListener() {
+        const firstPrayerRow = prayersContainer.querySelector('.prayer-entry');
+        if (firstPrayerRow) {
+            const firstMonthSelect = firstPrayerRow.querySelector('.month-select');
+            const firstYearSelect = firstPrayerRow.querySelector('.year-select');
+            
+            // تعريف الدالة التي سيتم استدعاؤها عند التغيير
+            lockDateListener = () => {
+                if (firstMonthSelect.value && firstYearSelect.value) {
+                    lockedMonth = firstMonthSelect.value;
+                    lockedYear = firstYearSelect.value;
+                } else {
+                    lockedMonth = null;
+                    lockedYear = null;
+                }
+            };
+            
+            firstMonthSelect.addEventListener('change', lockDateListener);
+            firstYearSelect.addEventListener('change', lockDateListener);
+        }
     }
 
-    // تفعيل قوائم "من تاريخ" و "إلى تاريخ"
+    // تفعيل قوائم التاريخ الرئيسية
     populateDays(document.querySelector('#periodStart .day-select'));
     populateMonths(document.querySelector('#periodStart .month-select'));
     populateYears(document.querySelector('#periodStart .year-select'));
@@ -104,13 +125,11 @@ document.addEventListener('DOMContentLoaded', function() {
     populateMonths(document.querySelector('#periodEnd .month-select'));
     populateYears(document.querySelector('#periodEnd .year-select'));
     
-    // إضافة صف صلاة فارغ عند تحميل الصفحة
-    addNewPrayerRow();
+    addNewPrayerRow(); // إضافة أول صف صلاة
+    attachLockListener(); // ربط حدث التثبيت بأول صف
 
-    // ربط زر "إضافة صلاة" بالدالة الخاصة به
     addPrayerBtn.addEventListener('click', addNewPrayerRow);
 
-    // ربط زر الحذف بالدالة الخاصة به
     prayersContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-btn')) {
             e.target.closest('.prayer-entry').remove();
@@ -121,7 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ||          SECTION 3: ADMIN LOGIN & FORM SUBMISSION         ||
     // =================================================================
     
-    // جلب عناصر نافذة تسجيل الدخول
     const adminLoginBtn = document.getElementById('adminLoginBtn');
     const passwordModal = document.getElementById('passwordModal');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -130,7 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordError = document.getElementById('passwordError');
     const ADMIN_PASSWORD = "admin";
 
-    // منطق نافذة تسجيل الدخول كاملاً
     if (adminLoginBtn && passwordModal) {
         adminLoginBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -141,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
         closeModalBtn.addEventListener('click', () => {
             passwordModal.classList.remove('active');
         });
-        
+
         passwordModal.addEventListener('click', (e) => {
             if (e.target === passwordModal) {
                 passwordModal.classList.remove('active');
@@ -157,17 +174,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // منطق إرسال النموذج كاملاً
-    if (prayerForm) {
+    if(prayerForm) {
         prayerForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-
-            // بناء حقل "لفترة شهر" من القوائم المنسدلة
             const monthText = monthPeriodSelect.options[monthPeriodSelect.selectedIndex]?.text || '';
             const yearText = yearPeriodSelect.options[yearPeriodSelect.selectedIndex]?.text || '';
             const fullMonthName = (monthText && yearText) ? `${monthText} لعام ${yearText}` : '';
             
-            // تجميع كل البيانات في كائن واحد
             const dataToSend = {
                 preacherName: preacherNameSelect.value,
                 nationalId: nationalIdInput.value,
@@ -180,7 +193,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 })).filter(p => p.mosqueAndNeighborhood || p.date)
             };
             
-            // إرسال البيانات إلى الخادم
             try {
                 const response = await fetch('/api/requests', {
                     method: 'POST',
@@ -189,17 +201,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 if (!response.ok) throw new Error('حدث خطأ أثناء إرسال الطلب.');
                 showAlert('تم إرسال الطلب بنجاح!', 'success');
-                prayerForm.reset(); // إعادة تعيين النموذج
-                nationalIdInput.value = ''; // مسح الهوية الوطنية يدوياً
-                prayersContainer.innerHTML = ''; // مسح الصلوات القديمة
-                addNewPrayerRow(); // إضافة صف فارغ جديد
+                
+                // إعادة تعيين كل شيء للحالة الأولية
+                prayerForm.reset();
+                nationalIdInput.value = '';
+                prayersContainer.innerHTML = '';
+                lockedMonth = null;
+                lockedYear = null;
+                addNewPrayerRow();
+                attachLockListener();
+
             } catch (error) {
                 showAlert(error.message, 'danger');
             }
         });
     }
 
-    // دالة لإظهار رسائل التنبيه للمستخدم
     function showAlert(message, type) {
         const alertContainer = document.getElementById('alert-container');
         const wrapper = document.createElement('div');
