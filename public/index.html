@@ -12,16 +12,6 @@
         .card-header { background-color: #2c3e50; color: white; }
         .admin-login-link { position: absolute; top: 1rem; left: 1rem; z-index: 10; }
         .date-select-group .form-select { margin-left: 0.5rem; }
-         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); display: none;
-            justify-content: center; align-items: center; z-index: 1050;
-        }
-        .modal-content-custom {
-            background: white; padding: 2rem; border-radius: 0.5rem;
-            width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,.5);
-            text-align: center;
-        }
     </style>
 </head>
 <body>
@@ -35,33 +25,44 @@
             <div class="card-body p-4">
                 <form id="prayerForm">
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-			<label for="preacherName" class="form-label">اسم الخطيب المتعاون:</label>
-			<select class="form-select" id="preacherName">
-			<option value="" disabled selected>-- اختر --</option>
-			<option value="متعب بدر عبدالرحمن القوس">متعب بدر عبدالرحمن القوس</option>
-			<option value="فهد محيا سهل المهيدلي العتيبي">فهد محيا سهل المهيدلي العتيبي</option>
-			<option value="سلطان معتق مفرح الروقي">سلطان معتق مفرح الروقي</option>
-			<option value="رشيد صالح سليمان العجمي">رشيد صالح سليمان العجمي</option>
-			<option value="عمر نائف عقاب الكسر العتيبي">عمر نائف عقاب الكسر العتيبي</option></select></div>
-                        <div class="col-md-6">
-			<label for="nationalId" class="form-label">الهوية الوطنية:</label>
-			<input type="text" class="form-control" id="nationalId"></div>
-                        <div class="col-md-12">
-			<label class="form-label">لفترة شهر:</label>
-			<input type="text" class="form-control" id="monthName" placeholder="مثال: محرم لعام 1447هـ"></div>
-					</div>
-                    <div class="row g-3">
-                         <div class="col-md-6">
-                            <label class="form-label">من تاريخ:</label>
-                            <div class="d-flex date-select-group" id="periodStart">
-                                <select class="form-select day-select"></select><select class="form-select month-select"></select><select class="form-select year-select"></select>
+                        <div class="col-12 col-md-6">
+                            <label for="preacherName" class="form-label">اسم الخطيب المتعاون:</label>
+                            <select class="form-select" id="preacherName">
+                                <option value="" disabled selected>-- اختر --</option>
+                                <option value="متعب بدر عبدالرحمن القوس">متعب بدر عبدالرحمن القوس</option>
+                                <option value="فهد محيا سهل المهيدلي العتيبي">فهد محيا سهل المهيدلي العتيبي</option>
+                                <option value="سلطان معتق مفرح الروقي">سلطان معتق مفرح الروقي</option>
+                                <option value="رشيد صالح سليمان العجمي">رشيد صالح سليمان العجمي</option>
+                                <option value="عمر نائف عقاب الكسر العتيبي">عمر نائف عقاب الكسر العتيبي</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label for="nationalId" class="form-label">الهوية الوطنية:</label>
+                            <input type="text" class="form-control" id="nationalId" readonly>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">لفترة شهر:</label>
+                            <div class="d-flex" id="period-month-year">
+                                <select class="form-select" id="month-period-select"></select>
+                                <select class="form-select" id="year-period-select" style="margin-right: 0.5rem;"></select>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                    </div>
+                    <div class="row g-3">
+                         <div class="col-12 col-md-6">
+                            <label class="form-label">من تاريخ:</label>
+                            <div class="d-flex date-select-group" id="periodStart">
+                                <select class="form-select day-select"></select>
+                                <select class="form-select month-select"></select>
+                                <select class="form-select year-select"></select>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
                             <label class="form-label">إلى تاريخ:</label>
                              <div class="d-flex date-select-group" id="periodEnd">
-                                <select class="form-select day-select"></select><select class="form-select month-select"></select><select class="form-select year-select"></select>
+                                <select class="form-select day-select"></select>
+                                <select class="form-select month-select"></select>
+                                <select class="form-select year-select"></select>
                             </div>
                         </div>
                     </div>
@@ -77,7 +78,7 @@
         <div id="alert-container" class="mt-3"></div>
     </div>
     
-    <div id="passwordModal" class="modal-overlay">
+    <div id="passwordModal" class="modal-overlay" style="display: none;">
         <div class="modal-content-custom">
             <h4>دخول الإدارة</h4><p>الرجاء إدخال الرمز السري للوصول.</p>
             <input type="password" id="passwordInput" class="form-control mb-3" placeholder="الرمز السري">
